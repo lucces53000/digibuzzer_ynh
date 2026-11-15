@@ -1,0 +1,68 @@
+packaging_format = 2
+
+id = "digibuzzer"
+name = "DigiBuzzer"
+description.en = "Online application for creating virtual game rooms"
+description.fr = "Application en ligne pour créer des salles de jeu virtuelles"
+
+version = "0.8.6~ynh1"
+maintainers = []
+
+[upstream]
+license = "AGPL-3.0-only"
+website = "https://digibuzzer.app"
+admindoc = "https://codeberg.org/ladigitale/digibuzzer"
+code = "https://codeberg.org/ladigitale/digibuzzer"
+
+[integration]
+yunohost = ">= 12.1.40"
+helpers_version = "2.1"
+architectures = "all"
+multi_instance = true
+ldap = false
+sso = false
+disk = "500M"
+ram.build = "3G"
+ram.runtime = "512M"
+
+[install]
+    [install.domain]
+    type = "domain"
+
+    [install.path]
+    type = "path"
+    default = "/"
+
+    [install.init_main_permission]
+    type = "group"
+    default = "visitors"
+
+[resources]
+    [resources.sources]
+        [resources.sources.main]
+        url = "https://codeberg.org/ladigitale/digibuzzer/archive/0.8.6.tar.gz"
+        sha256 = "8432d8c2736a762af832d1a85769d6a57756825ed976314647050675ea6b53c5"
+        in_subdir = true
+        autoupdate.strategy = "latest_forgejo_tag"
+        autoupdate.upstream = "https://codeberg.org/ladigitale/digibuzzer"
+
+    [resources.ports.main]
+    default = 3000
+
+    [resources.ports.redis]
+    default = 16379
+
+    [resources.system_user]
+
+    [resources.install_dir]
+
+    [resources.data_dir]
+
+    [resources.permissions]
+        main.url = "/"
+
+    [resources.apt]
+    packages = "redis-server build-essential python3 zlib1g-dev"
+
+    [resources.nodejs]
+    version = "24"

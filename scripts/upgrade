@@ -1,0 +1,39 @@
+#!/bin/bash
+
+source "$(dirname "$0")/_common.sh"
+
+# Upstream routes and URL generation target the domain root; subpaths are unsupported.
+if [ "${path%/}" != "" ]; then
+    ynh_die "DigiBuzzer ne prend pas en charge les sous-chemins. L'application doit rester sur la racine / d'un domaine dédié."
+fi
+
+ynh_script_progression "Préservation des paramètres DigiBuzzer..."
+ynh_app_setting_set_default --key=db_pwd --value="$(ynh_string_random --length=48)"
+ynh_app_setting_set_default --key=session_key --value="$(ynh_string_random --length=64)"
+ynh_app_setting_set_default --key=port_redis --value="16379"
+port=$(ynh_app_setting_get --key=port)
+port_redis=$(ynh_app_setting_get --key=port_redis)
+if [ -z "$port" ]; then port=3000; fi
+if [ -z "$port_redis" ]; then port_redis=16379; fi
+db_pwd=$(ynh_app_setting_get --key=db_pwd)
+session_key=$(ynh_app_setting_get --key=session_key)
+ynh_app_setting_set --key=port --value="$port"
+ynh_app_setting_set --key=port_redis --value="$port_redis"
+
+ynh_systemctl --service="$app" --action=stop
+
+ynh_script_progression "Mise à niveau des sources DigiBuzzer..."
+ynh_setup_source --dest_dir="$install_dir" --full_replace --keep="avatars"
+
+ynh_script_progression "Compilation de DigiBuzzer..."
+install_node_dependencies
+configure_runtime
+
+ynh_script_progression "Actualisation de la configuration DigiBuzzer..."
+ynh_config_add --template="dotenv" --destination="$data_dir/.env"
+chmod 600 "$data_dir/.env"
+chown "$app:$app" "$data_dir/.env"
+ynh_config_add_nginx
+configure_systemd_runtime
+yunohost service add "$app" --description="DigiBuzzer virtual game rooms" --log="systemd"
+ynh_systemctl --service="$app" --action=start --log_path="systemd" --wait_until="Redis prêt" --timeout=120
